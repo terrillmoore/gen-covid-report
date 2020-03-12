@@ -1,0 +1,299 @@
+/*
+
+Module:  gen-covid-report.bri
+
+Function:
+	Set up a COVID-19 report
+
+Copyright notice:
+	See accompanying license file.
+
+Author:
+	Terry Moore, MCCI Corporation	August 2016
+
+*/
+
+/*
+|| The version number
+*/
+if (!(.VERSION in globals()))
+	VERSION = "v0.1.0";
+if (!(.COPYRIGHT in globals()))
+	COPYRIGHT = "Copyright (C) 2020, MCCI Corporation";
+
+/*
+|| Load MCCI Bright Library -- This can come from environment MCCIBRIGHT_LIB
+|| (conforming to the Windows MCCIConf naming conventions).
+||
+|| Also compatible with the library existing in the current directory or
+|| already loaded.
+*/
+if(!(.Lib in globals()))
+	{
+	local BRIGHTLIB = getenv("MCCIBRIGHT_LIB");
+	local MCCIBRIGHTLIB_root = (BRIGHTLIB == NULL ? "" : BRIGHTLIB .. "/") .. "mcci_v1.br"
+	// try compiled form
+	local tLib, sError = dofile(MCCIBRIGHTLIB_root .. "o");
+	if (sError != NULL)
+		{
+		tLib, sError = dofile(MCCIBRIGHTLIB_root.."i");
+		if (sError != NULL)
+	    		{
+	    		assert(FALSE,
+				"mcci_v1.bri not found/readable: " .. sError .. ". "..
+				" Set MCCIBRIGHT_LIB to the directory."
+				);
+			}
+	    	}
+	assert(Lib != NULL, "mcci_v1.bri load failed!")
+	}
+
+{
+local kBreak = Lib.ParsedDateToPosix(Lib.ParseDateString("2020-03-10"));
+gvDates = {};
+
+function SanitizeUS(tData, sProvince, posixDate)
+    {
+    if (posixDate < %kBreak)
+        return TRUE;
+    if (sProvince in tData.tProvinceMap)
+        return TRUE;
+    else
+        return FALSE;
+    }
+}
+
+gData = 
+    {
+    US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, Sanitize = SanitizeUS, },
+    KR = { name="Republic of Korea", pop = 51e6, hospital_beds_per_k = 11.5,  },
+    };
+
+{
+    local USstates =
+        {
+        "Alabama",
+        "Alaska",
+        "Arizona",
+        "Arkansas",
+        "California",
+        "Colorado",
+        "Columbia",
+        "Connecticut",
+        "Delaware",
+        "Florida",
+        "Georgia",
+        "Guam",
+        "Hawaii",
+        "Idaho",
+        "Illinois",
+        "Indiana",
+        "Iowa",
+        "Kansas",
+        "Kentucky",
+        "Louisiana",
+        "Maine",
+        "Maryland",
+        "Massachusetts ",
+        "Michigan",
+        "Minnesota",
+        "Mississippi",
+        "Missouri",
+        "Montana",
+        "Nebraska",
+        "Nevada",
+        "New Hampshire",
+        "New Jersey",
+        "New Mexico",
+        "New York",
+        "North Carolina",
+        "North Dakota",
+        "Northern Marianas Islands",
+        "Ohio",
+        "Oklahoma",
+        "Oregon",
+        "Pennsylvania",
+        "Puerto Rico",
+        "Rhode Island",
+        "Samoa",
+        "South Carolina",
+        "South Dakota",
+        "Tennessee",
+        "Texas",
+        "Utah",
+        "Vermont",
+        "Virgin Islands",
+        "Virginia",
+        "Washington",
+        "West Virginia",
+        "Wisconsin",
+        "Wyoming",
+        };
+    local USStateMap = Lib.Transpose(USstates);
+    gData.US.tProvinceMap = USStateMap
+}
+
+{
+    gCountryMap = {};
+
+    for k, v in gData do
+        {
+        gCountryMap[v.name] = k;
+        }
+}
+
+/****************************************************************************\
+|
+|	main()
+|
+\****************************************************************************/
+
+function loadfile(sPrefix, sFrag)
+    {
+    // open the file
+    local f, e = openfile(format("%scsse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-%s.csv", sPrefix, sFrag), "r");
+
+    if (f == NULL)
+        %Lib.Fatal("Can't open file fragment %s", sFrag);
+
+    local s, e1 = read(f, "*a");
+    if (s == NULL)
+        %Lib.Fatal("Can't read file fragment %s", sFrag);
+
+    closefile(f);
+
+    // normalize dates
+    local s1 = gsub(s,
+            "(%d+)/(%d+)/(%d%d)",
+            function(m,d,y) 
+                { 
+                return format("20%02s-%02s-%02s", y, m, d); 
+                });
+
+    // parse CSV, return headers as line 1
+    local t = %Lib.ParseCsv(s1, {});
+    return t;
+    }
+
+
+function main(tArgs)
+    {
+    local sPrefix = tArgs[1];
+    local tConfirmed = loadfile(sPrefix, "Confirmed");
+    local tDeaths = loadfile(sPrefix, "Deaths");
+    local tRecovered = loadfile(sPrefix, "Recovered");
+    local tMerge = {};
+    local sProvince = "Province/State"; local kProvince = 0;
+    local sCountry = "Country/Region"; local kCountry = 1;
+    local sLat = "Lat"; local kLat = 2;
+    local sLong = "Long"; local kLong = 3;
+    local kDate = 4;
+
+    // build a date translation table
+    tHeader = tConfirmed[0]; 
+    local tDates;
+    local vDates = {}
+    gvDates = vDates;
+
+    for i = kDate, getn(tHeader)-1 do
+        {
+        tinsert(vDates, %Lib.ParsedDateToPosix(%Lib.ParseDateString(tHeader[i])));
+        }
+
+    // merge 3 tables
+    for iRow = 1, getn(tConfirmed) - 1 do
+        {
+        local trConfirmed = tConfirmed[iRow];
+        local trDeaths = tDeaths[iRow];
+        local trRecovered = tRecovered[iRow];
+        local trMerge = {};
+        local fSkip = FALSE;
+       
+        local sCountry = trConfirmed[kCountry];
+        local sProvince = trConfirmed[kProvince];
+        local tCountryData;
+
+        if (sCountry in gCountryMap)
+            {
+            tCountryData = gData[gCountryMap[sCountry]];
+            }
+        else
+            tCountryData = {};
+
+        if (! fSkip)
+            {
+            if ( ! (sCountry in tMerge))
+                {
+                local tData = {}
+                tMerge[sCountry] = { Total = { Data = tData } };
+                for i = kDate, getn(tHeader) - 1 do
+                    {
+                    tData[i - kDate] = 
+                        {
+                        Confirmed = 0,
+                        Deaths = 0,
+                        Recovered = 0,
+                        };
+                    }
+                }
+
+            local tTotalData = tMerge[sCountry].Total.Data;
+
+            tMerge[sCountry][sProvince] =
+                    {
+                    GPS = { Lat = %Lib.StringToNumber(trConfirmed[kLat]), 
+                            Long = %Lib.StringToNumber(trConfirmed[kLong]) },
+                    Data = {}
+                    };
+
+            tMerge[sCountry][sProvince].Data = trMerge;
+
+            for i = kDate, getn(trConfirmed)-1 do
+                {
+                local posixDate = vDates[i - kDate];
+
+                local v = { Confirmed = %Lib.StringToNumber(trConfirmed[i]),
+                            Deaths = %Lib.StringToNumber(trDeaths[i]),
+                            Recovered = %Lib.StringToNumber(trRecovered[i])
+                        };
+                tinsert(trMerge, v);
+
+                if (.Sanitize in tCountryData && ! tCountryData.Sanitize(tCountryData, sProvince, posixDate))
+                    {
+                    /* do nothing */;
+                    print("skip "..sProvince);
+                    }
+                else
+                    {
+                    addStats(tTotalData[i - kDate], v);
+                    }
+                }
+            }
+        }
+
+    // now tMerge[] has the data. Get the US total for today
+    local iLast = getn(tHeader)-kDate-1;
+    local tUS = tMerge[gData.US.name].Total.Data[iLast];
+
+    write(format("US totals: Confirmed=%d Deaths=%d Rate=%.2f%%\n", 
+            tUS.Confirmed, tUS.Deaths, tUS.Deaths / tUS.Confirmed * 100));
+
+    write(format("**United States**\n"));
+    write(format("| Date | Confirmed | Deaths | Rate |\n"));
+    write(format("|-----:|----------:|-------:|-----:|\n"));
+    local tUS = tMerge[gData.US.name].Total.Data;
+    for i = 0, getn(tUS)-1 do
+        {
+        local tThis = tUS[i];
+        local sDate = date("%Y-%m-%d", "utc", vDates[i]);
+        write(format("| %s | %d | %d | %.2f |\n", sDate, tThis.Confirmed, tThis.Deaths, tThis.Deaths/tThis.Confirmed * 100));
+        }
+    }
+
+function addStats(t1, t2)
+    {
+    t1.Confirmed = t1.Confirmed + t2.Confirmed;
+    t1.Deaths = t1.Deaths + t2.Deaths;
+    t1.Recovered = t1.Recovered + t2.Recovered;
+    return t1;
+    }
