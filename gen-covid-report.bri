@@ -302,7 +302,7 @@ function main(tArgs)
     write(format("## United States Cases (Reported and Inferred)\n"));
     write("\n");
     write(format("| Date | Confirmed | Deaths | US Rate | KR Rate | Inferred Cases |\n"));
-    write(format("|-----:|----------:|-------:|--------:|--------:|----------------:|\n"));
+    write(format("|:----:|:---------:|:------:|:-------:|:-------:|:---------------:|\n"));
     local tUS = tMerge[gData.US.name].Total.Data;
     local tKR = tMerge[gData.KR.name].Total.Data;
     local firstI = nLast == NULL || nLast == 0 ? 0 : getn(tUS) - nLast;
@@ -328,7 +328,7 @@ function main(tArgs)
     write("## World cases (outside China)\n")
     write("\n");
     write("|  Date  |  Confirmed |  Deaths | Rate | Doubling Days |\n");
-    write("|:------:|-----------:|--------:|-----:|:-------------:|\n");
+    write("|:------:|:----------:|:-------:|:----:|:-------------:|\n");
     local kLog2 = log(2);
     local doublingSum = 0;
     local doublingCount = 0;
