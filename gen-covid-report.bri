@@ -261,7 +261,7 @@ function main(tArgs)
                 if (.Sanitize in tCountryData && ! tCountryData.Sanitize(tCountryData, sProvince, posixDate))
                     {
                     /* do nothing */;
-                    print("skip "..sProvince);
+                    // print("skip "..sProvince);
                     }
                 else
                     {
@@ -273,21 +273,34 @@ function main(tArgs)
 
     // now tMerge[] has the data. Get the US total for today
     local iLast = getn(tHeader)-kDate-1;
-    local tUS = tMerge[gData.US.name].Total.Data[iLast];
-
-    write(format("US totals: Confirmed=%d Deaths=%d Rate=%.2f%%\n", 
-            tUS.Confirmed, tUS.Deaths, tUS.Deaths / tUS.Confirmed * 100));
-
+    local tUSlast = tMerge[gData.US.name].Total.Data[iLast];
+    local tKRlast = tMerge[gData.KR.name].Total.Data[iLast];
+    if (tKRlast.Deaths == 0)
+        tKRlast = tMerge[gData.KR.name].Total.Data[iLast - 1];
+    
     write(format("**United States**\n"));
-    write(format("| Date | Confirmed | Deaths | Rate |\n"));
-    write(format("|-----:|----------:|-------:|-----:|\n"));
+    write(format("| Date | Confirmed | Deaths | Rate | KR Rate | Estimated Cases |\n"));
+    write(format("|-----:|----------:|-------:|-----:|--------:|----------------:|\n"));
     local tUS = tMerge[gData.US.name].Total.Data;
+    local tKR = tMerge[gData.KR.name].Total.Data;
     for i = 0, getn(tUS)-1 do
         {
         local tThis = tUS[i];
+        local tRateKR;
+        if (tKR[i].Confirmed == 0)
+            tRateKR = tKRlast.Deaths / tKRlast.Confirmed;
+        else
+            tRateKR = tKR[i].Deaths / tKR[i].Confirmed;
         local sDate = date("%Y-%m-%d", "utc", vDates[i]);
-        write(format("| %s | %d | %d | %.2f |\n", sDate, tThis.Confirmed, tThis.Deaths, tThis.Deaths/tThis.Confirmed * 100));
+        write(format("| %s | %d | %d | %.2f | %.2f | %d |\n", 
+                    sDate, tThis.Confirmed, tThis.Deaths, tThis.Deaths/tThis.Confirmed * 100,
+                    tRateKR * 100,
+                    tRateKR != 0 ? tThis.Deaths / tRateKR : tThis.Deaths
+                    ));
         }
+
+    local tUS = tUS[getn(tUS)-1];
+
     }
 
 function addStats(t1, t2)
