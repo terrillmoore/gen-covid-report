@@ -11,6 +11,9 @@ Copyright notice:
 Author:
 	Terry Moore, MCCI Corporation	August 2016
 
+Running:
+    MCCIBRIGHT_LIB=c:/tools/lib/bright bright gen-covid-report.bri ../COVID-19
+
 */
 
 /*
@@ -66,7 +69,7 @@ function SanitizeUS(tData, sProvince, posixDate)
 gData = 
     {
     US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, Sanitize = SanitizeUS, },
-    KR = { name="Republic of Korea", pop = 51e6, hospital_beds_per_k = 11.5,  },
+    KR = { name="Korea, South", pop = 51e6, hospital_beds_per_k = 11.5,  },
     };
 
 {
