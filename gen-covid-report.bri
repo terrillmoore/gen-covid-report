@@ -70,6 +70,7 @@ gData =
     {
     US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, Sanitize = SanitizeUS, },
     KR = { name="Korea, South", pop = 51e6, hospital_beds_per_k = 11.5,  },
+    CN = { name="China", pop = 1.1e9, },
     };
 
 {
@@ -182,6 +183,7 @@ function loadfile(sPrefix, sFrag)
 function main(tArgs)
     {
     local sPrefix = tArgs[1];
+    local nLast = getn(tArgs) > 2 ? Lib.StringToNumber(tArgs[2]) : NULL;
     local tConfirmed = loadfile(sPrefix, "Confirmed");
     local tDeaths = loadfile(sPrefix, "Deaths");
     local tRecovered = loadfile(sPrefix, "Recovered");
@@ -203,6 +205,24 @@ function main(tArgs)
         tinsert(vDates, %Lib.ParsedDateToPosix(%Lib.ParseDateString(tHeader[i])));
         }
 
+    local initDataTable = function() 
+        {
+        local tData = {}
+        local tResult = { Total = { Data = tData } };
+        for i = %kDate, getn(%tHeader) - 1 do
+            {
+            tData[i - %kDate] = 
+                {
+                Confirmed = 0,
+                Deaths = 0,
+                Recovered = 0,
+                };
+            }
+        return tResult;
+        }
+    
+    tMerge.World = initDataTable();
+
     // merge 3 tables
     for iRow = 1, getn(tConfirmed) - 1 do
         {
@@ -223,21 +243,13 @@ function main(tArgs)
         else
             tCountryData = {};
 
+        local tWorldData = tMerge.World.Total.Data;
+
         if (! fSkip)
             {
             if ( ! (sCountry in tMerge))
                 {
-                local tData = {}
-                tMerge[sCountry] = { Total = { Data = tData } };
-                for i = kDate, getn(tHeader) - 1 do
-                    {
-                    tData[i - kDate] = 
-                        {
-                        Confirmed = 0,
-                        Deaths = 0,
-                        Recovered = 0,
-                        };
-                    }
+                tMerge[sCountry] = initDataTable();
                 }
 
             local tTotalData = tMerge[sCountry].Total.Data;
@@ -269,24 +281,33 @@ function main(tArgs)
                 else
                     {
                     addStats(tTotalData[i - kDate], v);
+                    addStats(tWorldData[i - kDate], v);
                     }
                 }
             }
         }
 
-    // now tMerge[] has the data. Get the US total for today
+    write("# COVID-19 Report from `gen-covid-report`\n")
+    write("\n");
+
+    // tMerge[] has the data. Get the US total for today
     local iLast = getn(tHeader)-kDate-1;
     local tUSlast = tMerge[gData.US.name].Total.Data[iLast];
     local tKRlast = tMerge[gData.KR.name].Total.Data[iLast];
     if (tKRlast.Deaths == 0)
         tKRlast = tMerge[gData.KR.name].Total.Data[iLast - 1];
+    local tWorld = tMerge.World.Total.Data
+    local tWorldLast = tWorld[iLast];
     
-    write(format("**United States**\n"));
-    write(format("| Date | Confirmed | Deaths | Rate | KR Rate | Estimated Cases |\n"));
-    write(format("|-----:|----------:|-------:|-----:|--------:|----------------:|\n"));
+    write(format("## United States Cases (Reported and Inferred)\n"));
+    write("\n");
+    write(format("| Date | Confirmed | Deaths | US Rate | KR Rate | Inferred Cases |\n"));
+    write(format("|-----:|----------:|-------:|--------:|--------:|----------------:|\n"));
     local tUS = tMerge[gData.US.name].Total.Data;
     local tKR = tMerge[gData.KR.name].Total.Data;
-    for i = 0, getn(tUS)-1 do
+    local firstI = nLast == NULL || nLast == 0 ? 0 : getn(tUS) - nLast;
+
+    for i = firstI, getn(tUS)-1 do
         {
         local tThis = tUS[i];
         local tRateKR;
@@ -302,8 +323,51 @@ function main(tArgs)
                     ));
         }
 
-    local tUS = tUS[getn(tUS)-1];
+    // print out general info
+    write("\n");
+    write("## World cases (outside China)\n")
+    write("\n");
+    write("|  Date  |  Confirmed |  Deaths | Rate | Doubling Days |\n");
+    write("|:------:|-----------:|--------:|-----:|:-------------:|\n");
+    local kLog2 = log(2);
+    local doublingSum = 0;
+    local doublingCount = 0;
+    for i = firstI, getn(tWorld)-1 do
+        {
+        local tThis = tWorld[i];
+        local sDate = date("%Y-%m-%d", "utc", vDates[i]);
+        local nNew, nNewPrev = 0, 0;
+        local tCn = tMerge[gData.CN.name].Total.Data;
+        local tThisCn = tCn[i];
+        local nConfirmed = tThis.Confirmed - tThisCn.Confirmed;
+        local nDeaths = tThis.Deaths - tThisCn.Deaths;
 
+        nNew = nConfirmed;
+        if (i > 0)
+            nNewPrev = (tWorld[i-1].Confirmed - tCn[i-1].Confirmed);
+
+        if (nNewPrev > 0)
+            nDoubling = kLog2 / log(nNew / nNewPrev);
+
+        write(format(
+            "| %s | %d | %d | %.2f | %.1f |\n",
+            sDate,
+            nConfirmed,
+            nDeaths,
+            nConfirmed != 0 ? nDeaths / nConfirmed * 100 : 0,
+            nDoubling
+            ));
+
+        doublingSum = doublingSum + nDoubling;
+        if (nDoubling != 0)
+            doublingCount = doublingCount + 1;
+        }
+
+    if (doublingCount != 0)
+        {
+        write("\n");
+        write(format("Mean doubling days: %.1f\n", doublingSum/doublingCount));
+        }
     }
 
 function addStats(t1, t2)
