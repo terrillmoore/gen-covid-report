@@ -345,12 +345,12 @@ function main(tArgs)
         local nConfirmedAdjust = nDeaths / rateKR;
 
         write(format(
-            "| %s | %d | %d | %.2f | %d | %.1f |\n",
+            "| %s | %s | %s | %.2f | %s | %.1f |\n",
             sDate,
-            nConfirmed,
-            nDeaths,
+            formatHeadcount(nConfirmed),
+            formatHeadcount(nDeaths),
             nConfirmed != 0 ? nDeaths / nConfirmed * 100 : 0,
-            nConfirmedAdjust,
+            formatHeadcount(nConfirmedAdjust),
             nDoubling
             ));
 
