@@ -383,6 +383,34 @@ function getKRlast(tMerge)
     return tKRlast;    
     }
 
+function formatPopPerCase(pop, nCases)
+    {
+    local n = NULL;
+    if (pop != NULL && nCases != NULL && nCases != 0)
+        n = pop / nCases;
+
+    return formatHeadcount(n);
+    }
+
+function formatHeadcount(n)
+    {
+    local sResult = "-";
+    if (n != NULL)
+        {
+        if (n < 1e6)
+            {
+            sResult = format("%d", n);
+            if (strlen(sResult) > 3)
+                sResult = strsub(sResult, 0, -4)..","..strsub(sResult, -3);
+            }
+        else if (n < 1e9)
+            sResult = format("%.1fe6", n / 1e6);
+        else
+            sResult = format("%.1fe9", n / 1e9);
+        }
+    return sResult;
+    }
+
 function reportCases(tCountryData, tMerge, vDates, nLast)
     {
     // tMerge[] has the data. Get the US total for today
@@ -395,9 +423,9 @@ function reportCases(tCountryData, tMerge, vDates, nLast)
     
     write(format("## %s Cases (Reported and Inferred)\n", tCountryData.name));
     write("\n");
-    write(format("| Date | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases |\n",
+    write(format("| Date | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
                 "%", "%"));
-    write(format("|:----:|:---------:|:------:|:-------------:|:--------:|:-------:|:-------:|:---------------:|\n"));
+    write(format("|:----:|:---------:|:------:|:-------------:|:--------:|:-----------:|:--------------:|:---------------:|:----------:|\n"));
     local tCountry = tMerge[tCountryData.name].Total.Data;
     local tKR = tMerge[gData.KR.name].Total.Data;
     local firstI = nLast == NULL || nLast == 0 ? 0 : getn(tCountry) - nLast;
@@ -422,31 +450,25 @@ function reportCases(tCountryData, tMerge, vDates, nLast)
         if (nNewPrev != NULL && nNewPrev > 0 && nNew > nNewPrev)
             nDoubling = kLog2 / log(nNew / nNewPrev);
 
-        local nPopPerCase = nNew == 0 ? NULL : tCountryData.pop / nNew;
-        local sPopPerCase = "-";
-        if (nPopPerCase != NULL)
-            {
-            if (nPopPerCase < 1e6)
-                {
-                sPopPerCase = format("%d", nPopPerCase);
-                if (strlen(sPopPerCase) > 3)
-                    sPopPerCase = strsub(sPopPerCase, 0, -4)..","..strsub(sPopPerCase, -3);
-                }
-            else if (nPopPerCase < 1e9)
-                sPopPerCase = format("%.1fe6", nPopPerCase / 1e6);
-            else
-                sPopPerCase = format("%.1fe9", nPopPerCase / 1e9);
-            }
+        local sPopPerCase = formatPopPerCase(tCountryData.pop, nNew);
 
         local sDoubling = (nDoubling == NULL) ? "- " : format("%.1f", nDoubling);
 
-        write(format("| %s | %d | %d | %s | %s | %.2f | %.2f | %d |\n", 
-                    sDate, tThis.Confirmed, tThis.Deaths,
+        local nInferred = tRateKR != 0 ? tThis.Deaths / tRateKR : tThis.Deaths;
+
+        local sLine = 
+            format("| %s | %s | %s | %s | %s | %.2f | %.2f | %s | %s |\n", 
+                    sDate, 
+                    formatHeadcount(tThis.Confirmed), 
+                    formatHeadcount(tThis.Deaths),
                     sPopPerCase, 
                     sDoubling,
                     rateUS * 100,
                     tRateKR * 100,
-                    tRateKR != 0 ? tThis.Deaths / tRateKR : tThis.Deaths
-                    ));
+                    formatHeadcount(nInferred),
+                    formatPopPerCase(tCountryData.pop, nInferred)
+                    );
+
+        write(sLine);
         }
     }
