@@ -316,19 +316,24 @@ function main(tArgs)
         else
             tRateKR = tKR[i].Deaths / tKR[i].Confirmed;
         local sDate = date("%Y-%m-%d", "utc", vDates[i]);
+        local rateUS = tThis.Confirmed != 0 ? tThis.Deaths / tThis.Confirmed : 0;
         write(format("| %s | %d | %d | %.2f | %.2f | %d |\n", 
-                    sDate, tThis.Confirmed, tThis.Deaths, tThis.Deaths/tThis.Confirmed * 100,
+                    sDate, tThis.Confirmed, tThis.Deaths, rateUS * 100,
                     tRateKR * 100,
                     tRateKR != 0 ? tThis.Deaths / tRateKR : tThis.Deaths
                     ));
         }
 
+    // use the most recent korean total as the average rate 
+    local rateKR = tKRlast.Deaths / tKRlast.Confirmed;
+
     // print out general info
     write("\n");
     write("## World cases (outside China)\n")
     write("\n");
-    write(format("|  Date  |  Confirmed |  Deaths | Rate (%s) | Doubling Days |\n", "%"));
-    write("|:------:|:----------:|:-------:|:----:|:-------------:|\n");
+    write(format(
+          "|  Date  |  Confirmed |  Deaths | Rate (%s) | KR Normalized | Doubling Days |\n", "%"));
+    write("|:------:|:----------:|:-------:|:---------:|:-------------:|:-------------:|\n");
     local kLog2 = log(2);
     local doublingSum = 0;
     local doublingCount = 0;
@@ -349,12 +354,15 @@ function main(tArgs)
         if (nNewPrev > 0)
             nDoubling = kLog2 / log(nNew / nNewPrev);
 
+        local nConfirmedAdjust = nDeaths / rateKR;
+
         write(format(
-            "| %s | %d | %d | %.2f | %.1f |\n",
+            "| %s | %d | %d | %.2f | %d | %.1f |\n",
             sDate,
             nConfirmed,
             nDeaths,
             nConfirmed != 0 ? nDeaths / nConfirmed * 100 : 0,
+            nConfirmedAdjust,
             nDoubling
             ));
 
