@@ -75,7 +75,10 @@ gData =
     NO = { name="Norway", pop = 5.2e6, },
     ES = { name="Spain", pop = 46.42e6, },
     FR = { name="France", pop = 66.9e6, },
-    DE = { name="Germany", pop = 82.93e6, }
+    DE = { name="Germany", pop = 82.93e6, },
+    IN = { name="India", pop = 1.35e9 },
+    JP = { name="Japan", pop = 126.79e6 },
+    EC = { name="Ecuador", pop = 17.08e6 },
     };
 
 {
@@ -302,6 +305,9 @@ function main(tArgs)
     reportCases(gData.ES, tMerge, vDates, nLast);
     reportCases(gData.FR, tMerge, vDates, nLast);
     reportCases(gData.DE, tMerge, vDates, nLast);
+    reportCases(gData.IN, tMerge, vDates, nLast);
+    reportCases(gData.JP, tMerge, vDates, nLast);
+    reportCases(gData.EC, tMerge, vDates, nLast);
 
     // use the most recent korean total as the average rate 
     local tKRlast = getKRlast(tMerge);
