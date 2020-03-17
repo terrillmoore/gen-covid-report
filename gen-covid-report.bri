@@ -79,6 +79,7 @@ gData =
     IN = { name="India", pop = 1.35e9 },
     JP = { name="Japan", pop = 126.79e6 },
     EC = { name="Ecuador", pop = 17.08e6 },
+    CA = { name="Canada", pop = 3779749 },
     };
 
 {
@@ -298,16 +299,19 @@ function main(tArgs)
     write("# COVID-19 Report from `gen-covid-report`\n")
     write("\n");
 
-    reportCases(gData.KR, tMerge, vDates, nLast);
-    reportCases(gData.US, tMerge, vDates, nLast);
-    reportCases(gData.IT, tMerge, vDates, nLast);
-    reportCases(gData.NO, tMerge, vDates, nLast);
-    reportCases(gData.ES, tMerge, vDates, nLast);
-    reportCases(gData.FR, tMerge, vDates, nLast);
-    reportCases(gData.DE, tMerge, vDates, nLast);
-    reportCases(gData.IN, tMerge, vDates, nLast);
-    reportCases(gData.JP, tMerge, vDates, nLast);
-    reportCases(gData.EC, tMerge, vDates, nLast);
+    local reportCasesForCountry = function(tCountryData) return reportCases(tCountryData, %tMerge, %vDates, %nLast);
+
+    reportCasesForCountry(gData.KR);
+    reportCasesForCountry(gData.US);
+    reportCasesForCountry(gData.IT);
+    reportCasesForCountry(gData.NO);
+    reportCasesForCountry(gData.ES);
+    reportCasesForCountry(gData.FR);
+    reportCasesForCountry(gData.DE);
+    reportCasesForCountry(gData.IN);
+    reportCasesForCountry(gData.JP);
+    reportCasesForCountry(gData.EC);
+    reportCasesForCountry(gData.CA);
 
     // use the most recent korean total as the average rate 
     local tKRlast = getKRlast(tMerge);
