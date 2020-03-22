@@ -66,7 +66,7 @@ function SanitizeUS(tData, sProvince, posixDate)
     }
 }
 
-gData = 
+gData =
     {
     US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, Sanitize = SanitizeUS, },
     KR = { name="Korea, South", pop = 51e6, hospital_beds_per_k = 11.5,  },
@@ -178,9 +178,9 @@ function loadfile(sPrefix, sFrag)
     // normalize dates
     local s1 = gsub(s,
             "(%d+)/(%d+)/(%d%d)",
-            function(m,d,y) 
-                { 
-                return format("20%02s-%02s-%02s", y, m, d); 
+            function(m,d,y)
+                {
+                return format("20%02s-%02s-%02s", y, m, d);
                 });
 
     // parse CSV, return headers as line 1
@@ -204,7 +204,7 @@ function main(tArgs)
     gkDate = 4;
 
     // build a date translation table
-    gtHeader = tConfirmed[0]; 
+    gtHeader = tConfirmed[0];
     local tDates;
     local vDates = {}
     gvDates = vDates;
@@ -214,13 +214,13 @@ function main(tArgs)
         tinsert(vDates, %Lib.ParsedDateToPosix(%Lib.ParseDateString(gtHeader[i])));
         }
 
-    local initDataTable = function() 
+    local initDataTable = function()
         {
         local tData = {}
         local tResult = { Total = { Data = tData } };
         for i = gkDate, getn(gtHeader) - 1 do
             {
-            tData[i - gkDate] = 
+            tData[i - gkDate] =
                 {
                 Confirmed = 0,
                 Deaths = 0,
@@ -229,7 +229,7 @@ function main(tArgs)
             }
         return tResult;
         }
-    
+
     tMerge.World = initDataTable();
 
     // merge 3 tables
@@ -240,7 +240,7 @@ function main(tArgs)
         local trRecovered = tRecovered[iRow];
         local trMerge = {};
         local fSkip = FALSE;
-       
+
         local sCountry = trConfirmed[kCountry];
         local sProvince = trConfirmed[kProvince];
         local tCountryData;
@@ -265,7 +265,7 @@ function main(tArgs)
 
             tMerge[sCountry][sProvince] =
                     {
-                    GPS = { Lat = %Lib.StringToNumber(trConfirmed[kLat]), 
+                    GPS = { Lat = %Lib.StringToNumber(trConfirmed[kLat]),
                             Long = %Lib.StringToNumber(trConfirmed[kLong]) },
                     Data = {}
                     };
@@ -313,7 +313,7 @@ function main(tArgs)
     reportCasesForCountry(gData.EC);
     reportCasesForCountry(gData.CA);
 
-    // use the most recent korean total as the average rate 
+    // use the most recent korean total as the average rate
     local tKRlast = getKRlast(tMerge);
     local rateKR = tKRlast.Deaths / tKRlast.Confirmed;
     local tWorld = tMerge.World.Total.Data;
@@ -384,7 +384,7 @@ function getKRlast(tMerge)
     local tKRlast = tMerge[gData.KR.name].Total.Data[iLast];
     if (tKRlast.Deaths == 0)
         tKRlast = tMerge[gData.KR.name].Total.Data[iLast - 1];
-    return tKRlast;    
+    return tKRlast;
     }
 
 function getKRhundred(tMerge)
@@ -406,7 +406,7 @@ function getHundred(tCountry)
             break;
             }
         }
-  
+
     return iHundred;
     }
 
@@ -447,7 +447,7 @@ function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
     local tWorld = tMerge.World.Total.Data
     local tWorldLast = tWorld[iLast];
     local kLog2 = log(2);
-    
+
     write(format("\n## %s Cases (Reported and Inferred)\n", tCountryData.name));
     write("\n");
     write(format("| Date | Dn  | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
@@ -500,13 +500,13 @@ function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
         if (i < iHundred)
             nInferred = NULL;
 
-        local sLine = 
-            format("| %s | %d | %s | %s | %s | %s | %.2f | %.2f | %s | %s |\n", 
-                    sDate, 
+        local sLine =
+            format("| %s | %d | %s | %s | %s | %s | %.2f | %.2f | %s | %s |\n",
+                    sDate,
                     i - iHundred,
-                    formatHeadcount(tThis.Confirmed), 
+                    formatHeadcount(tThis.Confirmed),
                     formatHeadcount(tThis.Deaths),
-                    sPopPerCase, 
+                    sPopPerCase,
                     sDoubling,
                     rateHere * 100,
                     tRateKR * 100,
@@ -546,5 +546,5 @@ The report columns and their meanings:
 
 The program for generating this report can be found on GitHub at [github.com/terrillmoore/gen-covid-report](https://github.com/terrillmoore/gen-covid-report). Running it requires a copy of the author's dialect of Lua, called "bright". Binaries are in the repository; [file an issue](https://github.com/terrillmoore/gen-covid-report/issues) if you'd like to encourage publication of the tools used in this script, or feel free to convert to Python, Lua, or the scripting language of your choice.
 ]]);
-  
+
     }
