@@ -299,7 +299,8 @@ function main(tArgs)
     write("# COVID-19 Report from `gen-covid-report`\n")
     write("\n");
 
-    local reportCasesForCountry = function(tCountryData) return reportCases(tCountryData, %tMerge, %vDates, %nLast);
+    local nKRhundred = getKRhundred(tMerge);
+    local reportCasesForCountry = function(tCountryData) return reportCases(tCountryData, %tMerge, %vDates, %nLast, %nKRhundred);
 
     reportCasesForCountry(gData.KR);
     reportCasesForCountry(gData.US);
@@ -387,6 +388,29 @@ function getKRlast(tMerge)
     return tKRlast;    
     }
 
+function getKRhundred(tMerge)
+    {
+    local tKRdata = tMerge[gData.KR.name].Total.Data;
+    return getHundred(tKRdata);
+    }
+
+function getHundred(tCountry)
+    {
+    local iHundred = getn(tCountry);
+
+    for i = 0, getn(tCountry)-1 do
+        {
+        local tThis = tCountry[i];
+        if (tThis.Confirmed >= 100 && iHundred > i)
+            {
+            iHundred = i;
+            break;
+            }
+        }
+  
+    return iHundred;
+    }
+
 function formatPopPerCase(pop, nCases)
     {
     local n = NULL;
@@ -415,7 +439,7 @@ function formatHeadcount(n)
     return sResult;
     }
 
-function reportCases(tCountryData, tMerge, vDates, nLast)
+function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
     {
     // tMerge[] has the data. Get the US total for today
     local iLast = getn(gtHeader)-gkDate-1;
@@ -427,21 +451,30 @@ function reportCases(tCountryData, tMerge, vDates, nLast)
     
     write(format("## %s Cases (Reported and Inferred)\n", tCountryData.name));
     write("\n");
-    write(format("| Date | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
+    write(format("| Date | Dn  | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
                 "%", "%"));
-    write(format("|:----:|:---------:|:------:|:-------------:|:--------:|:-----------:|:--------------:|:---------------:|:----------:|\n"));
+    write(format("|:----:|:---:|:---------:|:------:|:-------------:|:--------:|:-----------:|:--------------:|:---------------:|:----------:|\n"));
     local tCountry = tMerge[tCountryData.name].Total.Data;
     local tKR = tMerge[gData.KR.name].Total.Data;
     local firstI = nLast == NULL || nLast == 0 ? 0 : getn(tCountry) - nLast;
+
+    local iHundred = getHundred(tCountry);
 
     for i = firstI, getn(tCountry)-1 do
         {
         local tThis = tCountry[i];
         local tRateKR;
-        if (tKR[i].Confirmed == 0)
-            tRateKR = tKRlast.Deaths / tKRlast.Confirmed;
+        if (i >= iHundred)
+            {
+            local iKR = iKRhundred + (i - iHundred);
+            if (tKR[iKR].Confirmed == 0)
+                tRateKR = 0;
+            else
+                tRateKR = tKR[iKR].Deaths / tKR[iKR].Confirmed;
+            }
         else
-            tRateKR = tKR[i].Deaths / tKR[i].Confirmed;
+            tRateKR = 0;
+
         local sDate = date("%Y-%m-%d", "utc", vDates[i]);
         local rateHere = tThis.Confirmed != 0 ? tThis.Deaths / tThis.Confirmed : 0;
 
@@ -465,9 +498,13 @@ function reportCases(tCountryData, tMerge, vDates, nLast)
             nInferred = NULL;
             }
 
+        if (i < iHundred)
+            nInferred = NULL;
+
         local sLine = 
-            format("| %s | %s | %s | %s | %s | %.2f | %.2f | %s | %s |\n", 
+            format("| %s | %d | %s | %s | %s | %s | %.2f | %.2f | %s | %s |\n", 
                     sDate, 
+                    i - iHundred,
                     formatHeadcount(tThis.Confirmed), 
                     formatHeadcount(tThis.Deaths),
                     sPopPerCase, 
