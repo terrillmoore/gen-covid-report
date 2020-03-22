@@ -296,8 +296,7 @@ function main(tArgs)
             }
         }
 
-    write("# COVID-19 Report from `gen-covid-report`\n")
-    write("\n");
+    writeHeader();
 
     local nKRhundred = getKRhundred(tMerge);
     local reportCasesForCountry = function(tCountryData) return reportCases(tCountryData, %tMerge, %vDates, %nLast, %nKRhundred);
@@ -367,7 +366,7 @@ function main(tArgs)
     if (doublingCount != 0)
         {
         write("\n");
-        write(format("Mean doubling days: %.1f\n", doublingSum/doublingCount));
+        write(format("Mean doubling days for last %d days: %.1f\n", doublingCount, doublingSum/doublingCount));
         }
     }
 
@@ -449,7 +448,7 @@ function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
     local tWorldLast = tWorld[iLast];
     local kLog2 = log(2);
     
-    write(format("## %s Cases (Reported and Inferred)\n", tCountryData.name));
+    write(format("\n## %s Cases (Reported and Inferred)\n", tCountryData.name));
     write("\n");
     write(format("| Date | Dn  | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
                 "%", "%"));
@@ -517,4 +516,35 @@ function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
 
         write(sLine);
         }
+    }
+
+function writeHeader()
+    {
+    write("# COVID-19 Report from `gen-covid-report`\n")
+    write(
+[[
+This report was generated from the Johns Hopkins COVID-19 data base, available on [GitHub](https://github.com/CSSEGISandData/COVID-19).
+
+It consists of reports about a number of countries, followed by a slightly different report on world data.
+
+The country data starts with data for South Korea, which is taken as reference for relating cases to death rate during a well-surveilled outbreak.
+
+Other countries are then presented, with comparisons to South Korea where applicable.
+
+The report columns and their meanings:
+
+- **Date** is the date of the report.
+- **Dn** is the index relative to day when cases reached 100 or more. Days before 100 cases were reached are taken as negative. Following a suggestion I found at ft.com, a case load of 100 cases is taken to indicate the onset of community transition.
+- **Confirmed** is the number of confirmed cases from the JHU COVID-19 series.
+- **Deaths** is the number of reported deaths from the JHU COVID-19 series.
+- **Pop/Confirmed** is the number of people per case in that country. Lower numbers indicate higher case load. I use this because it's easier to relate to community populations in a subset of the population. It might also be nice to report log(cases/population), which I imagine is the way it's ordinarily reported.
+- **Doubling** is the number of days between doubling. It's not smoothed at all. Delays in reporting data will occasionally perturb it.
+- **Deaths (%)** is simply reported deaths over reported cases, times 100%.
+- **KR Deaths (%)** is the reference death rate in Korea _on the same relative day of outbreak_.
+- **Inferred Cases** is the calculated number of cases, in case the reported death rate is higher than the Korean rate on the same day of the outbreak. This number is based on dividing the reported number of deaths by the reference Korean death rate. It's only reported if the Korean death rate is lower than the country's death rate.
+- **Inferred Pop/Confirmed** is simply the number of people per inferred case.
+
+The program for generating this report can be found on GitHub at [github.com/terrillmoore/gen-covid-report](https://github.com/terrillmoore/gen-covid-report). Running it requires a copy of the author's dialect of Lua, called "bright". Binaries are in the repository; [file an issue](https://github.com/terrillmoore/gen-covid-report/issues) if you'd like to encourage publication of the tools used in this script, or feel free to convert to Python, Lua, or the scripting language of your choice.
+]]);
+  
     }
