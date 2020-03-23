@@ -80,6 +80,7 @@ gData =
     JP = { name="Japan", pop = 126.79e6 },
     EC = { name="Ecuador", pop = 17.08e6 },
     CA = { name="Canada", pop = 3779749 },
+    TW = { name="Taiwan*", pop = 23.59e6, reportName="Taiwan" },
     };
 
 {
@@ -312,6 +313,7 @@ function main(tArgs)
     reportCasesForCountry(gData.JP);
     reportCasesForCountry(gData.EC);
     reportCasesForCountry(gData.CA);
+    reportCasesForCountry(gData.TW);
 
     // use the most recent korean total as the average rate
     local tKRlast = getKRlast(tMerge);
@@ -447,8 +449,13 @@ function reportCases(tCountryData, tMerge, vDates, nLast, iKRhundred)
     local tWorld = tMerge.World.Total.Data
     local tWorldLast = tWorld[iLast];
     local kLog2 = log(2);
+    local sCountryName;
 
-    write(format("\n## %s Cases (Reported and Inferred)\n", tCountryData.name));
+    sCountryName = tCountryData.name;
+    if (.reportName in tCountryData)
+        sCountryName = tCountryData.reportName
+
+    write(format("\n## %s Cases (Reported and Inferred)\n", sCountryName));
     write("\n");
     write(format("| Date | Dn  | Confirmed | Deaths | Pop/Confirmed | Doubling | Deaths (%s) | KR Deaths (%s) | Inferred Cases | Pop/Inferred |\n",
                 "%", "%"));
@@ -523,6 +530,23 @@ function writeHeader()
     write("# COVID-19 Report from `gen-covid-report`\n")
     write(
 [[
+- [Introduction](#introduction)
+- [Korea, South Cases (Reported and Inferred)](#korea-south-cases-reported-and-inferred)
+- [US Cases (Reported and Inferred)](#us-cases-reported-and-inferred)
+- [Italy Cases (Reported and Inferred)](#italy-cases-reported-and-inferred)
+- [Norway Cases (Reported and Inferred)](#norway-cases-reported-and-inferred)
+- [Spain Cases (Reported and Inferred)](#spain-cases-reported-and-inferred)
+- [France Cases (Reported and Inferred)](#france-cases-reported-and-inferred)
+- [Germany Cases (Reported and Inferred)](#germany-cases-reported-and-inferred)
+- [India Cases (Reported and Inferred)](#india-cases-reported-and-inferred)
+- [Japan Cases (Reported and Inferred)](#japan-cases-reported-and-inferred)
+- [Ecuador Cases (Reported and Inferred)](#ecuador-cases-reported-and-inferred)
+- [Canada Cases (Reported and Inferred)](#canada-cases-reported-and-inferred)
+- [Taiwan Cases (Reported and Inferred)](#taiwan-cases-reported-and-inferred)
+- [World cases (outside China)](#world-cases-outside-china)
+
+## Introduction
+
 This report was generated from the Johns Hopkins COVID-19 data base, available on [GitHub](https://github.com/CSSEGISandData/COVID-19).
 
 It consists of reports about a number of countries, followed by a slightly different report on world data.
