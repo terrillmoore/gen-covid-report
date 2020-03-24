@@ -165,7 +165,7 @@ gData =
 function loadfile(sPrefix, sFrag)
     {
     // open the file
-    local f, e = openfile(format("%scsse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-%s.csv", sPrefix, sFrag), "r");
+    local f, e = openfile(format("%scsse_covid_19_data/csse_covid_19_time_series/time_series_covid19_%s_global.csv", sPrefix, sFrag), "r");
 
     if (f == NULL)
         %Lib.Fatal("Can't open file fragment %s", sFrag);
@@ -194,15 +194,27 @@ function main(tArgs)
     {
     local sPrefix = tArgs[1];
     local nLast = getn(tArgs) > 2 ? Lib.StringToNumber(tArgs[2]) : NULL;
-    local tConfirmed = loadfile(sPrefix, "Confirmed");
-    local tDeaths = loadfile(sPrefix, "Deaths");
-    local tRecovered = loadfile(sPrefix, "Recovered");
+    local tConfirmed = loadfile(sPrefix, "confirmed");
+    local tDeaths = loadfile(sPrefix, "deaths");
+    // local tRecovered = loadfile(sPrefix, "Recovered");
+    // kluge until we switch to scanning the daily files
+    gkDate = 4;
+    local tRecovered = {};
+    for i = 0, getn(tDeaths)-1 do
+        {
+        local trDeaths = tDeaths[i];
+        local trRecovered = {};
+        for j = 0, gkDate-1 do
+            trRecovered[j] = trDeaths[j];
+        for j = gkDate, getn(trDeaths)-1 do
+            trRecovered[j] = 0;
+        tRecovered[i] = trRecovered;
+        }
     local tMerge = {};
     local sProvince = "Province/State"; local kProvince = 0;
     local sCountry = "Country/Region"; local kCountry = 1;
     local sLat = "Lat"; local kLat = 2;
     local sLong = "Long"; local kLong = 3;
-    gkDate = 4;
 
     // build a date translation table
     gtHeader = tConfirmed[0];
