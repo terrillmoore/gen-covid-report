@@ -68,7 +68,7 @@ function SanitizeUS(tData, sProvince, posixDate)
 
 gData =
     {
-    US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, Sanitize = SanitizeUS, },
+    US = { name="US", pop = 330e6, hospital_beds_per_k = 2.9, tProvinceMap = {}, /* Sanitize = SanitizeUS, */ },
     KR = { name="Korea, South", pop = 51e6, hospital_beds_per_k = 11.5,  },
     CN = { name="China", pop = 1.1e9, },
     IT = { name="Italy", pop = 62e6, },
