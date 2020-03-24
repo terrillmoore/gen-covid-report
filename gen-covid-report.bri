@@ -581,6 +581,8 @@ The report columns and their meanings:
 - **Inferred Pop/Confirmed** is simply the number of people per inferred case.
 
 The program for generating this report can be found on GitHub at [github.com/terrillmoore/gen-covid-report](https://github.com/terrillmoore/gen-covid-report). Running it requires a copy of the author's dialect of Lua, called "bright". Binaries are in the repository; [file an issue](https://github.com/terrillmoore/gen-covid-report/issues) if you'd like to encourage publication of the tools used in this script, or feel free to convert to Python, Lua, or the scripting language of your choice.
+
+Notes on changes in the report can be found in the [README](https://github.com/terrillmoore/gen-covid-report/blob/master/README.md) file
 ]]);
 
     }
